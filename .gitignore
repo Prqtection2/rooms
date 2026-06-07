@@ -1,0 +1,23 @@
+# .NET build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+*.user
+*.suo
+
+# Rider / VS
+.idea/
+.vs/
+
+# Test results
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+coverage/
+
+# Local runtime data (Rooms writes to %AppData%\Rooms, but ignore any local copies)
+/artifacts/
+*.log

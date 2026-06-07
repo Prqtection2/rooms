@@ -1,0 +1,99 @@
+<Window x:Class="Rooms.App.Views.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:conv="clr-namespace:Rooms.App.Converters"
+        Title="Rooms – Settings" Width="480" SizeToContent="Height"
+        WindowStartupLocation="CenterScreen" Background="#111827" ResizeMode="NoResize">
+    <Window.Resources>
+        <conv:StringToVisibilityConverter x:Key="StrToVis" />
+    </Window.Resources>
+
+    <StackPanel Margin="18">
+        <TextBlock Text="Settings" Foreground="#F9FAFB" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,12" />
+
+        <CheckBox Content="Run Rooms at sign-in" IsChecked="{Binding RunAtStartup}" />
+        <CheckBox Content="Keep unassigned windows visible in every room (sticky)"
+                  IsChecked="{Binding StickyUnassignedWindows}" />
+        <CheckBox Content="Re-assert the room during a locked focus session (hide intruding windows)"
+                  IsChecked="{Binding FocusReassertion}" />
+
+        <DockPanel Margin="0,8,0,0">
+            <TextBox DockPanel.Dock="Right" Width="56" Text="{Binding DefaultFocusMinutes}" TextAlignment="Center" />
+            <TextBlock Text="Default focus length (minutes)" Foreground="#F9FAFB" VerticalAlignment="Center" />
+        </DockPanel>
+
+        <TextBlock Text="Default room (activated at launch)" Foreground="#9CA3AF" Margin="0,12,0,2" />
+        <ComboBox ItemsSource="{Binding RoomChoices}" SelectedItem="{Binding DefaultRoom}" DisplayMemberPath="Name" />
+
+        <TextBlock Text="Hotkeys" Foreground="#9CA3AF" Margin="0,16,0,4" FontWeight="SemiBold" />
+        <ItemsControl ItemsSource="{Binding HotkeyRows}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Grid Margin="0,3">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding ActionLabel}" Foreground="#F9FAFB" />
+                            <TextBlock Text="{Binding Conflict}" Foreground="#FCA5A5" FontSize="11"
+                                       Visibility="{Binding Conflict, Converter={StaticResource StrToVis}}" />
+                        </StackPanel>
+
+                        <TextBlock Grid.Column="1" Text="{Binding Display}" Foreground="#9CA3AF"
+                                   VerticalAlignment="Center" Margin="8,0" MinWidth="96" TextAlignment="Right" />
+
+                        <Button Grid.Column="2" Background="#374151" Margin="4,0"
+                                Command="{Binding DataContext.StartCaptureCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                CommandParameter="{Binding}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                    <Setter Property="Content" Value="Set" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsCapturing}" Value="True">
+                                            <Setter Property="Content" Value="Press keys…" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+
+                        <Button Grid.Column="3" Content="Clear" Background="#374151"
+                                Command="{Binding DataContext.ClearHotkeyCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                CommandParameter="{Binding}" />
+                    </Grid>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <TextBlock Text="Click Set, then press the combo. Esc cancels." Foreground="#6B7280" FontSize="11" Margin="0,4,0,0" />
+
+        <Border Background="#1F2937" CornerRadius="6" Padding="10" Margin="0,14,0,0">
+            <StackPanel>
+                <TextBlock Text="Website blocking" Foreground="#9CA3AF" FontSize="11" />
+                <CheckBox Content="Use hosts-file blocking (Option B — needs admin)"
+                          IsChecked="{Binding UseHostsFileBlocking}" Margin="0,4" />
+                <TextBlock Text="{Binding WebsiteBlockerStatus}" Foreground="#9CA3AF" FontSize="11"
+                           TextWrapping="Wrap" Margin="0,2,0,0" />
+            </StackPanel>
+        </Border>
+
+        <Border Background="#1F2937" CornerRadius="6" Padding="10" Margin="0,12,0,0">
+            <StackPanel>
+                <TextBlock Text="Testing" Foreground="#9CA3AF" FontSize="11" />
+                <Button Content="Set up testing rooms" Background="#374151" HorizontalAlignment="Left"
+                        Margin="0,6,0,0" Command="{Binding SetUpTestingRoomsCommand}" />
+                <TextBlock Foreground="#9CA3AF" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"
+                           Text="Creates an 'Everything' (catch-all) room that keeps all your windows visible, plus Writing and Searching, and binds Ctrl+Alt+1 / 2 / 3." />
+            </StackPanel>
+        </Border>
+
+        <DockPanel Margin="0,18,0,0">
+            <Button DockPanel.Dock="Right" Content="Save" Command="{Binding SaveCommand}" />
+            <Button DockPanel.Dock="Right" x:Name="CloseButton" Content="Close" Background="#374151" Margin="0,0,8,0" />
+            <TextBlock />
+        </DockPanel>
+    </StackPanel>
+</Window>

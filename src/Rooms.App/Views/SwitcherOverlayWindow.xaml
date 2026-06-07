@@ -1,0 +1,86 @@
+<Window x:Class="Rooms.App.Views.SwitcherOverlayWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:conv="clr-namespace:Rooms.App.Converters"
+        Title="Rooms Switcher"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Topmost="True" ShowInTaskbar="False" ShowActivated="True"
+        WindowStartupLocation="CenterScreen" SizeToContent="WidthAndHeight" ResizeMode="NoResize">
+    <Window.Resources>
+        <conv:IncrementConverter x:Key="Inc" />
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </Window.Resources>
+
+    <Border Background="#F21F2937" CornerRadius="14" Padding="18" MinWidth="440">
+        <StackPanel>
+            <TextBlock Text="Switch room" Foreground="#F9FAFB" FontSize="20" FontWeight="SemiBold" Margin="4,0,0,12" />
+
+            <ListBox x:Name="RoomList" ItemsSource="{Binding Rooms}" AlternationCount="99"
+                     Background="Transparent" BorderThickness="0" Foreground="#F9FAFB"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem">
+                                    <Border x:Name="Bd" Background="Transparent" CornerRadius="8" Padding="10,7" Margin="0,2">
+                                        <ContentPresenter />
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="#2563EB" />
+                                        </Trigger>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="#374151" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <DockPanel>
+                            <Border Width="24" Height="24" CornerRadius="5" Background="#111827" Margin="0,0,12,0">
+                                <TextBlock Foreground="#9CA3AF" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Text="{Binding Path=(ItemsControl.AlternationIndex), RelativeSource={RelativeSource AncestorType=ListBoxItem}, Converter={StaticResource Inc}}" />
+                            </Border>
+                            <Border Width="12" Height="12" CornerRadius="6" Background="{Binding Accent}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                            <TextBlock Text="{Binding Name}" FontSize="16" VerticalAlignment="Center" />
+                        </DockPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <TextBlock Foreground="#9CA3AF" FontSize="11" Margin="4,12,0,0"
+                       Text="&#x2191;&#x2193; select  &#xB7;  1-9 jump  &#xB7;  Enter switch  &#xB7;  Esc cancel" />
+
+            <Border Height="1" Background="#374151" Margin="0,14,0,12" />
+
+            <!-- Focus session: start when idle, countdown + End when active -->
+            <Button Content="Start focus session…" Background="#374151" HorizontalAlignment="Left"
+                    Visibility="{Binding FocusBar.IsInactive, Converter={StaticResource BoolToVis}}"
+                    Command="{Binding StartFocusCommand}" />
+            <DockPanel Visibility="{Binding FocusBar.IsActive, Converter={StaticResource BoolToVis}}">
+                <Button DockPanel.Dock="Right" Content="End session" Background="#7F1D1D"
+                        Command="{Binding FocusBar.GiveUpCommand}" />
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Focus session" Foreground="#FBBF24" FontSize="11" />
+                    <TextBlock Text="{Binding FocusBar.Remaining}" Foreground="#F9FAFB" FontSize="18" FontWeight="SemiBold" />
+                </StackPanel>
+            </DockPanel>
+
+            <DockPanel Margin="0,12,0,0">
+                <Button DockPanel.Dock="Right" Content="Settings" Background="#374151"
+                        Command="{Binding OpenSettingsCommand}" />
+                <Button DockPanel.Dock="Right" Content="Show all" Background="#374151" Margin="0,0,8,0"
+                        Command="{Binding ShowAllCommand}" />
+                <Button Content="Reset room" Background="#374151" HorizontalAlignment="Left"
+                        ToolTip="Clear this room's session windows and relaunch its defaults"
+                        Command="{Binding ResetActiveRoomCommand}" />
+            </DockPanel>
+        </StackPanel>
+    </Border>
+</Window>
