@@ -1,0 +1,79 @@
+name: Release
+
+# Push a version tag to cut a release with downloadable executables:
+#   git tag v1.0.0
+#   git push origin v1.0.0
+# The job builds, tests, and attaches Rooms.exe (portable) + RoomsSetup.exe (installer)
+# to a GitHub Release. Permanent download links then become:
+#   https://github.com/<owner>/<repo>/releases/latest/download/Rooms.exe
+#   https://github.com/<owner>/<repo>/releases/latest/download/RoomsSetup.exe
+on:
+  push:
+    tags: [ 'v*' ]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Resolve version from tag
+        id: ver
+        shell: pwsh
+        run: |
+          $v = "${{ github.ref_name }}" -replace '^v',''
+          if (-not $v -or $v -eq "${{ github.ref_name }}" -and "${{ github.ref_type }}" -ne "tag") { $v = "0.0.0-dev" }
+          "version=$v" >> $env:GITHUB_OUTPUT
+          Write-Host "Version: $v"
+
+      - name: Test
+        run: dotnet test Rooms.sln -c Release --nologo
+
+      - name: Publish portable single-file exe
+        shell: pwsh
+        run: |
+          dotnet publish src/Rooms.App -c Release -r win-x64 --self-contained true `
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:EnableCompressionInSingleFile=true -p:DebugType=none `
+            -p:SatelliteResourceLanguages=en -p:Version=${{ steps.ver.outputs.version }} `
+            -o build/portable
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item build/portable/Rooms.exe dist/Rooms.exe
+
+      - name: Build installer (Inno Setup)
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress -y
+          dotnet publish src/Rooms.App -c Release -r win-x64 --self-contained true `
+            -p:SatelliteResourceLanguages=en -p:Version=${{ steps.ver.outputs.version }}
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" packaging/Rooms.iss "/DAppVersion=${{ steps.ver.outputs.version }}"
+          Copy-Item packaging/dist/RoomsSetup.exe dist/RoomsSetup.exe
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rooms-${{ steps.ver.outputs.version }}
+          path: dist/*
+
+      - name: Publish GitHub Release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+          body: |
+            ## Rooms ${{ github.ref_name }}
+
+            **Download:**
+            - **Portable** — [`Rooms.exe`](https://github.com/${{ github.repository }}/releases/latest/download/Rooms.exe) — just double-click to run (no install, no .NET needed).
+            - **Installer** — [`RoomsSetup.exe`](https://github.com/${{ github.repository }}/releases/latest/download/RoomsSetup.exe) — Start-menu shortcut + uninstaller + optional run-at-startup.
+
+            Windows 10/11 (64-bit). The app lives in the system tray (blue **R** — click the `^` near the clock). Both downloads are unsigned, so Windows SmartScreen may warn: click **More info → Run anyway**.

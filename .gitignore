@@ -21,3 +21,8 @@ coverage/
 # Local runtime data (Rooms writes to %AppData%\Rooms, but ignore any local copies)
 /artifacts/
 *.log
+
+# Publish output (built by scripts/publish.ps1 or CI; shipped via GitHub Releases, never committed)
+/dist/
+/build/
+/packaging/dist/

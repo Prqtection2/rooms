@@ -4,6 +4,32 @@ A lightweight Windows app for creating isolated **rooms** — focused window env
 their own apps, layout, and optional distraction-blocking — and switching between them with
 near-zero friction from the tray or a global hotkey.
 
+## ⬇️ Download & install
+
+**Requirements:** Windows 10 or 11 (64-bit). Nothing else — .NET is bundled in, so there's no runtime to install.
+
+Grab the latest build from the **[Releases page](https://github.com/Prqtection2/rooms/releases/latest)**, then pick one:
+
+| | Download | What it does |
+|---|---|---|
+| **Portable** *(easiest)* | **[Rooms.exe](https://github.com/Prqtection2/rooms/releases/latest/download/Rooms.exe)** | One file. Double-click to run — no install. Put it anywhere (Desktop, a folder…). |
+| **Installer** | **[RoomsSetup.exe](https://github.com/Prqtection2/rooms/releases/latest/download/RoomsSetup.exe)** | Adds a Start-menu shortcut, an uninstaller, and an optional "start at sign-in". |
+
+> [!NOTE]
+> The downloads are **not code-signed**, so the first time you run one, Windows **SmartScreen** may say *"Windows protected your PC."* That's expected for a new indie app — click **More info → Run anyway**.
+
+**First run:** Rooms starts in the **system tray** (a blue **R** icon). Windows 11 hides new tray icons, so click the **`^` chevron** near the clock to find it.
+
+- **Left-click** the icon → quick room switcher
+- **Double-click**, or press **Ctrl + Alt + R** → full overlay
+- **Right-click** → menu (focus session, reset room, show all, settings, exit)
+
+**Uninstall:** if you used the installer, use *Add/Remove Programs*. For the portable exe, just delete it. Your rooms/settings live in `%AppData%\Rooms\` — delete that folder to remove them too.
+
+*(Want to build it yourself instead? See [Build from source](#build-test-run) below.)*
+
+---
+
 > **Status: §4–§15 implemented (build milestones M0–M9 done; M10 packaging scripted).** The full
 > layered architecture, DI, logging, persistence, and a working WPF UI build and run; **43 tests
 > pass**. Implemented:
@@ -89,7 +115,7 @@ Interfaces live in `Rooms.Core.Abstractions`; each adapter project exposes an
 
 ```powershell
 dotnet build Rooms.sln
-dotnet test  Rooms.sln                       # 43 tests
+dotnet test  Rooms.sln                       # 53 tests
 dotnet run --project src/Rooms.App           # runs Rooms.exe in the tray
 ```
 
@@ -99,19 +125,27 @@ click the `^` chevron near the clock). **Left-click** the icon for the popup swi
 instance runs at a time. The opt-in OS integration test runs with
 `$env:ROOMS_RUN_INTEGRATION=1; dotnet test`.
 
-## Packaging (M10)
+## Packaging & releasing (M10)
+
+**One command** builds the distributable, self-contained `Rooms.exe` (no .NET on the target):
 
 ```powershell
-# 1. Build a self-contained payload (no .NET needed on the target machine):
-dotnet publish src/Rooms.App -c Release -r win-x64 --self-contained true
-
-# 2. Compile the installer (requires the Inno Setup compiler, ISCC.exe):
-ISCC packaging/Rooms.iss            # -> packaging/dist/RoomsSetup.exe
+./scripts/publish.ps1                 # -> dist\Rooms.exe   (portable, ~64 MB)
+./scripts/publish.ps1 -Installer      # also dist\RoomsSetup.exe  (needs Inno Setup 6)
+./scripts/publish.ps1 -Version 1.2.0  # stamp a specific version
 ```
 
-The publish output under `…\win-x64\publish\` is itself runnable (`Rooms.exe`) without a dev
-environment. Per-user install needs no admin; hosts-file website blocking (Option B) still needs
-elevation at runtime.
+**Automated releases:** pushing a version tag runs [`.github/workflows/release.yml`](.github/workflows/release.yml),
+which tests, builds both the portable exe and the installer, and attaches them to a GitHub
+Release — giving permanent `…/releases/latest/download/Rooms.exe` links:
+
+```powershell
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+Per-user install needs no admin; hosts-file website blocking (Option B) still needs elevation at
+runtime. The downloads are unsigned — see the SmartScreen note under [Download & install](#️-download--install).
 
 ## Data locations (`%AppData%\Rooms\`)
 

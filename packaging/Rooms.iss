@@ -4,7 +4,10 @@
 ; Then compile this script with the Inno Setup compiler (ISCC.exe) to produce RoomsSetup.exe.
 
 #define AppName "Rooms"
-#define AppVersion "1.0.0"
+; Version can be injected by the build (ISCC /DAppVersion=1.2.3); defaults to 1.0.0 otherwise.
+#ifndef AppVersion
+  #define AppVersion "1.0.0"
+#endif
 #define Publisher "Rooms contributors"
 #define ExeName "Rooms.exe"
 #define PublishDir "..\src\Rooms.App\bin\Release\net8.0-windows\win-x64\publish"
