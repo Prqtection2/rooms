@@ -21,6 +21,7 @@
                 <ListBox.ItemContainerStyle>
                     <Style TargetType="ListBoxItem">
                         <Setter Property="Padding" Value="0" />
+                        <EventSetter Event="MouseDoubleClick" Handler="RoomItem_MouseDoubleClick" />
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="ListBoxItem">
@@ -55,7 +56,7 @@
             </ListBox>
 
             <TextBlock Foreground="#9CA3AF" FontSize="11" Margin="4,12,0,0"
-                       Text="&#x2191;&#x2193; select  &#xB7;  1-9 jump  &#xB7;  Enter switch  &#xB7;  F2 edit/rename  &#xB7;  Esc cancel" />
+                       Text="&#x2191;&#x2193; select  &#xB7;  Enter / double-click switch  &#xB7;  1-9 jump  &#xB7;  F2 edit  &#xB7;  Esc cancel" />
 
             <Border Height="1" Background="#374151" Margin="0,14,0,12" />
 

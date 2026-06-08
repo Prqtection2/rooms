@@ -80,6 +80,14 @@ public partial class SwitcherOverlayWindow : Window
             _viewModel.SwitchCommand.Execute(item);
     }
 
+    private void RoomItem_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        // Double-click a room to enter it (the keyboard "select + Enter" path still works too).
+        if (sender is FrameworkElement { DataContext: RoomItemViewModel item } && _viewModel.SwitchCommand.CanExecute(item))
+            _viewModel.SwitchCommand.Execute(item);
+        e.Handled = true;
+    }
+
     private void EditSelected()
     {
         // The editor opens modally; OpenRoomEditor hides this overlay so it isn't left on top.
