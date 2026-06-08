@@ -55,7 +55,7 @@
             </ListBox>
 
             <TextBlock Foreground="#9CA3AF" FontSize="11" Margin="4,12,0,0"
-                       Text="&#x2191;&#x2193; select  &#xB7;  1-9 jump  &#xB7;  Enter switch  &#xB7;  Esc cancel" />
+                       Text="&#x2191;&#x2193; select  &#xB7;  1-9 jump  &#xB7;  Enter switch  &#xB7;  F2 edit/rename  &#xB7;  Esc cancel" />
 
             <Border Height="1" Background="#374151" Margin="0,14,0,12" />
 
@@ -77,9 +77,13 @@
                         Command="{Binding OpenSettingsCommand}" />
                 <Button DockPanel.Dock="Right" Content="Show all" Background="#374151" Margin="0,0,8,0"
                         Command="{Binding ShowAllCommand}" />
-                <Button Content="Reset room" Background="#374151" HorizontalAlignment="Left"
+                <Button DockPanel.Dock="Left" Content="Reset room" Background="#374151" Margin="0,0,8,0"
                         ToolTip="Clear this room's session windows and relaunch its defaults"
                         Command="{Binding ResetActiveRoomCommand}" />
+                <Button Content="Edit room" Background="#374151" HorizontalAlignment="Left"
+                        ToolTip="Rename or edit the selected room (or press F2)"
+                        Command="{Binding EditRoomCommand}"
+                        CommandParameter="{Binding ElementName=RoomList, Path=SelectedItem}" />
             </DockPanel>
         </StackPanel>
     </Border>

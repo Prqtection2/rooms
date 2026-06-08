@@ -23,6 +23,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IFocusSessionService, FocusSessionService>();
         services.AddSingleton<IFocusReassertionService, FocusReassertionService>();
         services.AddSingleton<IHotkeyService, HotkeyService>();
+        services.AddSingleton<IDefaultRoomsSeeder, DefaultRoomsSeeder>();
         services.AddSingleton<IStartupService, StartupService>();
         return services;
     }

@@ -82,11 +82,11 @@
 
         <Border Background="#1F2937" CornerRadius="6" Padding="10" Margin="0,12,0,0">
             <StackPanel>
-                <TextBlock Text="Testing" Foreground="#9CA3AF" FontSize="11" />
-                <Button Content="Set up testing rooms" Background="#374151" HorizontalAlignment="Left"
+                <TextBlock Text="Starter rooms" Foreground="#9CA3AF" FontSize="11" />
+                <Button Content="Set up starter rooms" Background="#374151" HorizontalAlignment="Left"
                         Margin="0,6,0,0" Command="{Binding SetUpTestingRoomsCommand}" />
                 <TextBlock Foreground="#9CA3AF" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"
-                           Text="Creates an 'Everything' (catch-all) room that keeps all your windows visible, plus Writing and Searching, and binds Ctrl+Alt+1 / 2 / 3." />
+                           Text="Creates a catch-all 'Home' room that keeps every window you have open, plus focused Notepad and Edge rooms, bound to Ctrl+Alt+1 / 2 / 3. Switch Home → Notepad → Home and your windows always come back." />
             </StackPanel>
         </Border>
 

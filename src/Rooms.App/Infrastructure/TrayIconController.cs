@@ -80,15 +80,17 @@ public sealed class TrayIconController : IDisposable
         ShowFirstRunIfNeeded();
     }
 
-    /// <summary>First-run experience (M8): with no rooms yet, welcome the user and open the editor.</summary>
+    /// <summary>First-run experience (M8): with no rooms yet, welcome the user. The starter rooms
+    /// themselves (catch-all Home + Notepad + Edge) are seeded by the StartupService a moment later,
+    /// which then switches into Home so nothing they had open disappears.</summary>
     private void ShowFirstRunIfNeeded()
     {
         if (_rooms.Rooms.Count > 0)
             return;
 
-        _notifications.ShowToast("Welcome to Rooms", "Let's create your first room.");
-        // Defer until startup finishes so the modal editor doesn't block initialisation.
-        Dispatcher.BeginInvoke(new Action(() => OpenRoomEditor(existingRoomId: null)));
+        _notifications.ShowToast(
+            "Welcome to Rooms",
+            "Set up 3 starter rooms for you: Home keeps everything you have open; Notepad and Microsoft Edge are focused. Switch with Ctrl+Alt+1/2/3.");
     }
 
     private ContextMenu BuildContextMenu()
@@ -191,6 +193,7 @@ public sealed class TrayIconController : IDisposable
     private void OpenRoomEditor(Guid? existingRoomId)
     {
         ClosePopup();
+        _services.GetRequiredService<SwitcherOverlayWindow>().Hide(); // don't trap the modal behind the overlay
         var existing = existingRoomId is Guid id ? _rooms.Get(id) : null;
         var windows = _services.GetRequiredService<IWindowService>();
         var viewModel = new RoomEditorViewModel(_rooms, windows, existing);

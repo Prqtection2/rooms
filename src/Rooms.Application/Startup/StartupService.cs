@@ -24,6 +24,7 @@ public sealed class StartupService : IStartupService
     private readonly ISwitchOrchestrator _orchestrator;
     private readonly IRoomManager _rooms;
     private readonly IAppSettingsStore _settingsStore;
+    private readonly IDefaultRoomsSeeder _seeder;
     private readonly ILogger<StartupService> _logger;
 
     public StartupService(
@@ -33,6 +34,7 @@ public sealed class StartupService : IStartupService
         ISwitchOrchestrator orchestrator,
         IRoomManager rooms,
         IAppSettingsStore settingsStore,
+        IDefaultRoomsSeeder seeder,
         ILogger<StartupService> logger)
     {
         _windows = windows;
@@ -41,6 +43,7 @@ public sealed class StartupService : IStartupService
         _orchestrator = orchestrator;
         _rooms = rooms;
         _settingsStore = settingsStore;
+        _seeder = seeder;
         _logger = logger;
     }
 
@@ -48,6 +51,11 @@ public sealed class StartupService : IStartupService
     {
         var state = await _stateStore.LoadAsync(ct).ConfigureAwait(false);
         await RecoverStrandedWindowsAsync(state, ct).ConfigureAwait(false);
+
+        // First launch: seed the friendly starter rooms (catch-all Home + Notepad + Edge) and
+        // their hotkeys, so the user lands in a safe Home with everything they had open - never an
+        // empty app. SeedIfEmptyAsync no-ops once any room exists.
+        await _seeder.SeedIfEmptyAsync(ct).ConfigureAwait(false);
 
         var settings = await _settingsStore.LoadAsync(ct).ConfigureAwait(false);
         SyncAutoStart(settings.RunAtStartup);

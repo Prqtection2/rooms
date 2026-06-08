@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Rooms.Application.Hotkeys;
 using Rooms.Application.Rooms;
+using Rooms.Application.Startup;
 using Rooms.Core.Abstractions;
 using Rooms.Core.Models;
 
@@ -22,6 +23,7 @@ public partial class SettingsViewModel : ObservableObject
     private readonly IRoomManager _rooms;
     private readonly IHotkeyService _hotkeys;
     private readonly IHotkeyRegistrar _registrar;
+    private readonly IDefaultRoomsSeeder _seeder;
 
     private AppSettings _settings = new();
 
@@ -29,12 +31,14 @@ public partial class SettingsViewModel : ObservableObject
         IAppSettingsStore settingsStore,
         IRoomManager rooms,
         IHotkeyService hotkeys,
-        IHotkeyRegistrar registrar)
+        IHotkeyRegistrar registrar,
+        IDefaultRoomsSeeder seeder)
     {
         _settingsStore = settingsStore;
         _rooms = rooms;
         _hotkeys = hotkeys;
         _registrar = registrar;
+        _seeder = seeder;
     }
 
     [ObservableProperty]
@@ -208,52 +212,14 @@ public partial class SettingsViewModel : ObservableObject
         Saved?.Invoke(this, EventArgs.Empty);
     }
 
-    /// <summary>One-click testing setup: a catch-all "Everything" room plus Writing and Searching,
-    /// bound to Ctrl+Alt+1/2/3 (and Ctrl+Alt+R / Ctrl+Alt+F). The Everything room keeps all your
-    /// windows visible so you can never get stuck.</summary>
+    /// <summary>One-click setup of the starter rooms: a catch-all "Home" that keeps every window
+    /// you have open, plus focused Notepad and Edge rooms, bound to Ctrl+Alt+1/2/3 (and
+    /// Ctrl+Alt+R / Ctrl+Alt+F). Same set that's seeded on first run.</summary>
     [RelayCommand]
     private async Task SetUpTestingRoomsAsync()
     {
-        var everything = await EnsureRoomAsync("Everything", catchAll: true, "#6B7280", matcher: null, autoLaunch: null);
-        var writing = await EnsureRoomAsync("Writing", catchAll: false, "#3B82F6", "notepad", "notepad.exe");
-        var searching = await EnsureRoomAsync("Searching", catchAll: false, "#10B981", "msedge", "msedge");
-
-        const ModifierKeys mods = ModifierKeys.Control | ModifierKeys.Alt;
-        _settings.Hotkeys = new List<HotkeyBinding>
-        {
-            new(HotkeyActions.SwitchToRoom, new HotkeyDefinition(mods, 0x31), everything.Id), // Ctrl+Alt+1
-            new(HotkeyActions.SwitchToRoom, new HotkeyDefinition(mods, 0x32), writing.Id),    // Ctrl+Alt+2
-            new(HotkeyActions.SwitchToRoom, new HotkeyDefinition(mods, 0x33), searching.Id),  // Ctrl+Alt+3
-            new(HotkeyActions.OpenSwitcher, new HotkeyDefinition(mods, 0x52), null),          // Ctrl+Alt+R
-            new(HotkeyActions.ToggleFocus, new HotkeyDefinition(mods, 0x46), null),           // Ctrl+Alt+F
-        };
-
-        await _settingsStore.SaveAsync(_settings);
-        await _hotkeys.ReloadAsync();
+        await _seeder.SeedAsync();
         Saved?.Invoke(this, EventArgs.Empty);
-    }
-
-    private async Task<Room> EnsureRoomAsync(string name, bool catchAll, string accent, string? matcher, string? autoLaunch)
-    {
-        var existing = _rooms.Rooms.FirstOrDefault(r => string.Equals(r.Name, name, StringComparison.OrdinalIgnoreCase));
-        if (existing is not null)
-            return existing;
-
-        var room = new Room
-        {
-            Id = Guid.NewGuid(),
-            Name = name,
-            OrderIndex = _rooms.Rooms.Count,
-            IsCatchAll = catchAll,
-            AccentColorHex = accent,
-        };
-        if (matcher is not null)
-            room.OwnedWindowMatchers.Add(new WindowMatcher { ProcessName = matcher });
-        if (autoLaunch is not null)
-            room.AutoLaunchApps.Add(new AppLaunchSpec { ExecutablePath = autoLaunch, LaunchOnEnter = true });
-
-        await _rooms.UpdateAsync(room);
-        return room;
     }
 
     partial void OnUseHostsFileBlockingChanged(bool value) => UpdateWebsiteStatus();

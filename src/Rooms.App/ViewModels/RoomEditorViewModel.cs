@@ -27,6 +27,7 @@ public partial class RoomEditorViewModel : ObservableObject
         if (existing is not null)
         {
             Name = existing.Name;
+            IsHome = existing.IsCatchAll;
             AccentColorHex = existing.AccentColorHex ?? string.Empty;
             foreach (var matcher in existing.OwnedWindowMatchers)
                 if (!string.IsNullOrWhiteSpace(matcher.ProcessName))
@@ -49,6 +50,11 @@ public partial class RoomEditorViewModel : ObservableObject
 
     [ObservableProperty]
     private string _name = "New Room";
+
+    /// <summary>When true this is a catch-all "Home" room: it keeps every window visible and
+    /// ignores the owned-app matchers (§6.1). A safe room you can always return to.</summary>
+    [ObservableProperty]
+    private bool _isHome;
 
     [ObservableProperty]
     private string _accentColorHex = "#3B82F6";
@@ -171,6 +177,7 @@ public partial class RoomEditorViewModel : ObservableObject
 
         var room = _existing ?? new Room { Id = Guid.NewGuid(), OrderIndex = _rooms.Rooms.Count };
         room.Name = Name.Trim();
+        room.IsCatchAll = IsHome;
         room.AccentColorHex = string.IsNullOrWhiteSpace(AccentColorHex) ? null : AccentColorHex.Trim();
         room.OwnedWindowMatchers = MatcherProcessNames
             .Select(p => new WindowMatcher { ProcessName = p })

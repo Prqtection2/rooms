@@ -12,6 +12,14 @@
         <TextBlock Text="Name" Foreground="#9CA3AF" />
         <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,12" />
 
+        <Border Background="#1F2937" CornerRadius="6" Padding="10,8" Margin="0,0,0,12">
+            <StackPanel>
+                <CheckBox Content="Home room (keep all my windows visible)" IsChecked="{Binding IsHome}" />
+                <TextBlock Text="A catch-all home base you can always return to. It shows every open window, so the 'owned apps' below don't apply to it."
+                           Foreground="#9CA3AF" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0" />
+            </StackPanel>
+        </Border>
+
         <TextBlock Text="Accent colour (hex, e.g. #3B82F6)" Foreground="#9CA3AF" />
         <TextBox Text="{Binding AccentColorHex, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,12" />
 

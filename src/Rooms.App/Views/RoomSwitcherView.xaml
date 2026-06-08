@@ -78,9 +78,9 @@
                                 </DockPanel>
                             </Button>
 
-                            <Button Grid.Column="1" Content="&#x270E;" Style="{StaticResource FlatButton}"
-                                    Foreground="#9CA3AF" Padding="8,6"
-                                    ToolTip="Edit room"
+                            <Button Grid.Column="1" Content="Edit" Style="{StaticResource FlatButton}"
+                                    Foreground="#93C5FD" Padding="10,6" FontSize="12"
+                                    ToolTip="Rename or edit this room"
                                     Command="{Binding DataContext.EditRoomCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                     CommandParameter="{Binding}" />
                         </Grid>

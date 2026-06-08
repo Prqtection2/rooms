@@ -57,6 +57,11 @@ public partial class SwitcherOverlayWindow : Window
                 SwitchSelected();
                 e.Handled = true;
                 return;
+
+            case Key.F2:
+                EditSelected();
+                e.Handled = true;
+                return;
         }
 
         if (TryGetDigit(e.Key, out var digit) && digit >= 1 && digit <= _viewModel.Rooms.Count)
@@ -73,6 +78,13 @@ public partial class SwitcherOverlayWindow : Window
     {
         if (RoomList.SelectedItem is RoomItemViewModel item && _viewModel.SwitchCommand.CanExecute(item))
             _viewModel.SwitchCommand.Execute(item);
+    }
+
+    private void EditSelected()
+    {
+        // The editor opens modally; OpenRoomEditor hides this overlay so it isn't left on top.
+        if (RoomList.SelectedItem is RoomItemViewModel item && _viewModel.EditRoomCommand.CanExecute(item))
+            _viewModel.EditRoomCommand.Execute(item);
     }
 
     private static bool TryGetDigit(Key key, out int digit)
