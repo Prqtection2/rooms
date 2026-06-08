@@ -146,8 +146,11 @@ public sealed class SwitchOrchestrator : ISwitchOrchestrator
 
             launched = LaunchAutoApps(room, windows); // 6. launch (returns immediately)
 
-            foreach (var window in toShow) // 7. show
-                _windows.Show(window.Handle);
+            // 7. show. EnumWindows gives us windows top-of-z-order first, so re-show them in reverse
+            // (bottom first) - each Show lands on top, leaving the originally-topmost window on top
+            // again. This keeps the stacking order you left the room in.
+            for (var i = toShow.Count - 1; i >= 0; i--)
+                _windows.Show(toShow[i].Handle);
 
             _ruleEnforcer.SetActiveRoom(room); // 8. rules
             ApplyAmbient(room);                 // 9. ambient
@@ -197,7 +200,9 @@ public sealed class SwitchOrchestrator : ISwitchOrchestrator
 
     private HashSet<string> BuildGlobalProcessSet(AppSettings settings)
     {
-        var set = new HashSet<string>(SafeProcessList.Names, StringComparer.OrdinalIgnoreCase);
+        // Never-hide system UI (NOT the whole block-safe list - File Explorer should be roomable)
+        // plus the user's configured global sticky processes.
+        var set = new HashSet<string>(SafeProcessList.NeverHideNames, StringComparer.OrdinalIgnoreCase);
         set.UnionWith(settings.GlobalStickyProcessNames);
         return set;
     }

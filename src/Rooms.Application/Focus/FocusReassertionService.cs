@@ -84,7 +84,7 @@ public sealed class FocusReassertionService : IFocusReassertionService, IDisposa
             return;
 
         // Leave the shell/system UI and windows that belong to the focus room alone.
-        if (SafeProcessList.Contains(window.ProcessName) ||
+        if (SafeProcessList.IsNeverHidden(window.ProcessName) ||
             _registry.GetExplicitRoom(window) == room.Id ||
             _rules.IsOwnedBy(window, room))
         {

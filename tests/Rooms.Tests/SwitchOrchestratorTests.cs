@@ -287,6 +287,44 @@ public class SwitchOrchestratorTests
         afterSecondA.Should().Equal(afterFirstA);
     }
 
+    [Fact]
+    public async Task File_Explorer_windows_are_roomed_and_not_treated_as_global_shell()
+    {
+        // A File Explorer window runs in explorer.exe (process "explorer") - the same process as the
+        // desktop/taskbar - but it's a normal app window that should be hidden when it isn't part of
+        // the room. (The desktop/taskbar themselves are filtered out earlier by window class.)
+        var room = RoomOwning("code");
+        var windows = new[] { TestWindows.Make(5, "explorer") };
+        var harness = await Harness.CreateAsync(new[] { room }, windows);
+        harness.Settings.Settings = new AppSettings { UnassignedPolicy = UnassignedWindowPolicy.CurrentRoom };
+
+        await harness.Orchestrator.SwitchToAsync(room.Id);
+
+        harness.Windows.Hidden.Should().Contain((IntPtr)5);
+    }
+
+    [Fact]
+    public async Task Hidden_windows_are_reshown_back_to_front_to_preserve_z_order()
+    {
+        var home = new Room { Id = Guid.NewGuid(), Name = "Home", IsCatchAll = true };
+        // EnumWindows reports windows top-of-z-order first.
+        var windows = new[]
+        {
+            TestWindows.Make(1, "top"),
+            TestWindows.Make(2, "mid"),
+            TestWindows.Make(3, "bottom"),
+        };
+        var harness = await Harness.CreateAsync(new[] { home }, windows);
+        harness.Windows.Hide((IntPtr)1);
+        harness.Windows.Hide((IntPtr)2);
+        harness.Windows.Hide((IntPtr)3);
+
+        await harness.Orchestrator.SwitchToAsync(home.Id);
+
+        // Re-shown bottom-first, so the originally-topmost window (1) is shown last and ends on top.
+        harness.Windows.Shown.Should().Equal((IntPtr)3, (IntPtr)2, (IntPtr)1);
+    }
+
     private static Room RoomOwning(string processName)
     {
         var room = new Room { Id = Guid.NewGuid(), Name = processName };

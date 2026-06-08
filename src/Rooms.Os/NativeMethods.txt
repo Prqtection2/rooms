@@ -1,6 +1,7 @@
 EnumWindows
 GetWindowTextLength
 GetWindowText
+GetClassName
 IsWindow
 IsWindowVisible
 IsIconic

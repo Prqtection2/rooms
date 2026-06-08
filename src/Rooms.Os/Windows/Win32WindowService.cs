@@ -15,8 +15,12 @@ namespace Rooms.Os.Windows;
 /// Win32 implementation of <see cref="IWindowService"/> (§5.1). Hiding a window uses SW_HIDE so it
 /// disappears completely from the taskbar, Alt-Tab, and the screen - that's what makes a room feel
 /// like a room (you only see the current room's apps). Opening a new app in a room creates a fresh
-/// visible window, which lands in that room's taskbar and is adopted into the room. Restoring uses
-/// SW_SHOWNOACTIVATE so returning to a room doesn't make every window pop to the front.
+/// visible window, which lands in that room's taskbar and is adopted into the room.
+///
+/// Crucially, we remember each window's show-state (minimised / maximised / normal) at hide time and
+/// restore that exact state - a minimised window comes back minimised, a maximised one comes back
+/// maximised - instead of yanking everything open. Restores avoid stealing focus (SW_SHOW*NOACTIVE)
+/// so returning to a room doesn't reshuffle the foreground.
 /// </summary>
 public sealed class Win32WindowService : IWindowService, IDisposable
 {
@@ -27,8 +31,21 @@ public sealed class Win32WindowService : IWindowService, IDisposable
     private const uint EVENT_SYSTEM_FOREGROUND = 0x0003;
     private const uint EVENT_SYSTEM_MINIMIZEEND = 0x0017;
 
+    // The shell's own structural windows. They run inside explorer.exe and otherwise look like
+    // ordinary top-level windows, so we exclude them by class - a room switch must never hide the
+    // desktop or the taskbar. (A real File Explorer window, class CabinetWClass, is NOT here, so it
+    // is treated as a normal, roomable app window.)
+    private static readonly HashSet<string> ShellWindowClasses = new(StringComparer.Ordinal)
+    {
+        "Progman",                // desktop ("Program Manager")
+        "WorkerW",                // desktop wallpaper host
+        "Shell_TrayWnd",          // primary taskbar
+        "Shell_SecondaryTrayWnd", // taskbar on additional monitors
+    };
+
     private readonly ILogger<Win32WindowService> _logger;
-    private readonly HashSet<IntPtr> _hiddenByUs = new();
+    // Handle -> the show-state the window had when we hid it, so Show() can restore it faithfully.
+    private readonly Dictionary<IntPtr, WindowShowState> _hiddenByUs = new();
     private readonly object _hiddenLock = new();
 
     // WinEvent hook plumbing, started lazily on first subscription.
@@ -82,7 +99,7 @@ public sealed class Win32WindowService : IWindowService, IDisposable
         get
         {
             lock (_hiddenLock)
-                return _hiddenByUs.ToArray();
+                return _hiddenByUs.Keys.ToArray();
         }
     }
 
@@ -92,25 +109,48 @@ public sealed class Win32WindowService : IWindowService, IDisposable
         if (!PInvoke.IsWindow(hwnd)) // stale-handle guard (§6)
             return;
 
+        // Remember how the window looked BEFORE hiding (minimised / maximised / normal) so we can
+        // put it back exactly the same when the user returns to this room.
+        var state = CaptureShowState(hwnd);
+
         // Clean hide: removes the window from the taskbar, Alt-Tab, and screen.
         PInvoke.ShowWindow(hwnd, SHOW_WINDOW_CMD.SW_HIDE);
         lock (_hiddenLock)
-            _hiddenByUs.Add(handle);
+            _hiddenByUs[handle] = state;
     }
 
     public void Show(IntPtr handle)
     {
-        var hwnd = new HWND(handle);
-
+        WindowShowState state;
         lock (_hiddenLock)
+        {
+            _hiddenByUs.TryGetValue(handle, out state); // Normal (default) if we didn't hide it
             _hiddenByUs.Remove(handle);
+        }
 
+        var hwnd = new HWND(handle);
         if (!PInvoke.IsWindow(hwnd))
             return;
 
-        // Un-hide quietly: don't steal focus or reorder the z-order, so returning to a room
-        // doesn't make every window pop to the front.
-        PInvoke.ShowWindow(hwnd, SHOW_WINDOW_CMD.SW_SHOWNOACTIVATE);
+        // Restore the window to the exact state it had when hidden, without stealing focus: a
+        // minimised window goes back to the taskbar (not popped open), a maximised one returns
+        // maximised, a normal one returns in place.
+        var command = state switch
+        {
+            WindowShowState.Minimized => SHOW_WINDOW_CMD.SW_SHOWMINNOACTIVE,
+            WindowShowState.Maximized => SHOW_WINDOW_CMD.SW_SHOWMAXIMIZED,
+            _ => SHOW_WINDOW_CMD.SW_SHOWNOACTIVATE,
+        };
+        PInvoke.ShowWindow(hwnd, command);
+    }
+
+    private static WindowShowState CaptureShowState(HWND hwnd)
+    {
+        if (PInvoke.IsIconic(hwnd))
+            return WindowShowState.Minimized;
+        if (PInvoke.IsZoomed(hwnd))
+            return WindowShowState.Maximized;
+        return WindowShowState.Normal;
     }
 
     public void Minimize(IntPtr handle)
@@ -138,7 +178,7 @@ public sealed class Win32WindowService : IWindowService, IDisposable
     {
         IntPtr[] handles;
         lock (_hiddenLock)
-            handles = _hiddenByUs.ToArray();
+            handles = _hiddenByUs.Keys.ToArray();
 
         foreach (var handle in handles)
             Show(handle);
@@ -203,7 +243,7 @@ public sealed class Win32WindowService : IWindowService, IDisposable
         {
             lock (_hiddenLock)
             {
-                if (!_hiddenByUs.Contains((IntPtr)hwnd))
+                if (!_hiddenByUs.ContainsKey((IntPtr)hwnd))
                     return false;
             }
         }
@@ -219,7 +259,18 @@ public sealed class Win32WindowService : IWindowService, IDisposable
         if (!owner.IsNull && (exStyle & WS_EX_APPWINDOW) == 0)
             return false;
 
-        return !IsCloaked(hwnd);
+        if (IsCloaked(hwnd))
+            return false;
+
+        // Never manage the desktop/taskbar (explorer.exe shell windows); File Explorer is fine.
+        return !ShellWindowClasses.Contains(GetClassNameOf(hwnd));
+    }
+
+    private static string GetClassNameOf(HWND hwnd)
+    {
+        Span<char> buffer = stackalloc char[256];
+        var copied = PInvoke.GetClassName(hwnd, buffer);
+        return copied > 0 ? new string(buffer[..copied]) : string.Empty;
     }
 
     private static unsafe bool IsCloaked(HWND hwnd)

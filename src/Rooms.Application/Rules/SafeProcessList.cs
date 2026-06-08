@@ -30,6 +30,22 @@ public static class SafeProcessList
         "taskmgr",                // never trap the user's escape hatch
     };
 
+    /// <summary>
+    /// System UI that must never be HIDDEN on a room switch (it stays visible in every room).
+    /// This is <see cref="Names"/> minus "explorer": a File Explorer window is a normal app window
+    /// that should be roomed like any other (hidden when you leave its room). The shell's own
+    /// desktop and taskbar - also explorer.exe - are filtered out earlier by window class, so they
+    /// are never hidden regardless. "explorer" stays in <see cref="Names"/> so rules can never
+    /// close/kill the shell process.
+    /// </summary>
+    public static readonly IReadOnlySet<string> NeverHideNames = new HashSet<string>(
+        Names.Where(n => !string.Equals(n, "explorer", StringComparison.OrdinalIgnoreCase)),
+        StringComparer.OrdinalIgnoreCase);
+
     public static bool Contains(string? processName) =>
         !string.IsNullOrEmpty(processName) && Names.Contains(processName);
+
+    /// <summary>True if this process's windows should never be hidden on a room switch.</summary>
+    public static bool IsNeverHidden(string? processName) =>
+        !string.IsNullOrEmpty(processName) && NeverHideNames.Contains(processName);
 }
