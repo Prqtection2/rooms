@@ -29,51 +29,6 @@ Grab the latest build from the **[Releases page](https://github.com/Prqtection2/
 *(Want to build it yourself instead? See [Build from source](#build-test-run) below.)*
 
 ---
-
-> **Status: §4–§15 implemented (build milestones M0–M9 done; M10 packaging scripted).** The full
-> layered architecture, DI, logging, persistence, and a working WPF UI build and run; **43 tests
-> pass**. Implemented:
-> - **Domain model (§4)** and **OS interaction layer (§5)** — window enumeration with Alt-Tab
->   filtering, hide/show/placement, executable-path resolution, WinEvent hooks, global
->   hotkeys, process launch/close/kill, wallpaper.
-> - **Switch engine (§6)** — the `WindowRegistry` ownership model (launched / matched / manual /
->   sticky), the full switch algorithm (desired-set diff, batch gating to avoid WinEvent
->   feedback loops, async launch, ambient + foreground), stale-handle `IsWindow` guards, and the
->   **lost-window failsafe** (hidden-handle journal + clean-exit restore).
-> - **Application services (§7)** — RoomManager, SwitchOrchestrator, HotkeyService
->   (switch/next/previous/switcher), FocusSessionService (countdown ticks), the reactive
->   RuleEngine enforcer, and StartupService.
-> - **App blocking (§8)** — the reactive RuleEngine applies a room's block reaction
->   (warn / minimize / close-gracefully) to disallowed windows, with a constant **safe-list**
->   so an allowlist never fights Explorer or system UI.
-> - **Website blocking (§9)** — pluggable `IWebsiteBlocker`. Option A (browser-process gating)
->   is the RuleEngine; Option B (hosts-file rewriting in a delimited managed block, with DNS
->   flush) ships and self-disables when not elevated. Honest about its limits (VPN / DoH /
->   direct-IP bypasses). Option C (browser extension) is post-v1.
-> - **Focus / friction (§10)** — a locked focus session (`AllowEarlyExit == false`) makes the
->   SwitchOrchestrator refuse to switch away, returning a "blocked" result; the UI prompts
->   "End focus early?" and the focus bar offers a surrenderable **Give up**.
-> - **Persistence (§11)** — single versioned `rooms.json`, `settings.json` (`HotkeyBinding`
->   list + policies), and `state.json` (last-active room + lost-window failsafe). Atomic writes,
->   schema-version envelope + migration hook.
-> - **UI (§12, WPF + CommunityToolkit.Mvvm)** — distinctive generated tray icon, tray popup
->   switcher, keyboard-driven switcher overlay (↑↓ / 1-9 / Enter / Esc), room editor (incl.
->   **capture open windows / pick-a-window**), settings with **live hotkey capture + conflict
->   detection**, and the focus-session bar. MVVM: `ActiveRoomChanged` and focus ticks bind
->   straight into view-models.
-> - **Focus re-assertion (§10, opt-in)** — when enabled, a locked focus session hides windows
->   that intrude on the focus room as they appear (friction-based, bypassable).
-> - **Bootstrap (§13)** — Generic Host composition root; **single-instance** named mutex; website
->   blocking defaults to Option A and is swappable to Option B from Settings.
-> - **Testing (§15)** — application layer fully faked + unit-tested, **idempotency property tests**
->   (A→A is a no-op, A→B→A restores the exact visible set), and an opt-in OS integration test.
-> - **Packaging (M10)** — app icon, MIT `LICENSE`, an Inno Setup script, and a verified
->   self-contained publish (`Rooms.exe`, no .NET prerequisite on the target).
->
-> Remaining niceties: capturing window *placements* (not just process matchers) in the editor,
-> and System.Text.Json source-generation (the reflection serializer works today). Skeleton paths
-> carry `TODO (§…)` markers.
-
 ## Tech stack
 
 | Concern        | Choice                                   |
