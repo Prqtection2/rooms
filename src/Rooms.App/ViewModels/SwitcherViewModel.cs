@@ -41,7 +41,9 @@ public partial class SwitcherViewModel : ObservableObject, IDisposable
 
     public event EventHandler? SettingsRequested;
 
-    public event EventHandler? FocusSetupRequested;
+    /// <summary>Raised to open the focus dialog, carrying the room the user is acting on (the one
+    /// highlighted in the switcher), or null to default to the active room.</summary>
+    public event EventHandler<Guid?>? FocusSetupRequested;
 
     public void Refresh() => UiThread.Post(() =>
     {
@@ -118,7 +120,8 @@ public partial class SwitcherViewModel : ObservableObject, IDisposable
     private void OpenSettings() => SettingsRequested?.Invoke(this, EventArgs.Empty);
 
     [RelayCommand]
-    private void StartFocus() => FocusSetupRequested?.Invoke(this, EventArgs.Empty);
+    private void StartFocus(RoomItemViewModel? room) =>
+        FocusSetupRequested?.Invoke(this, room?.Id ?? ActiveRoom?.Id);
 
     public void Dispose() => _orchestrator.ActiveRoomChanged -= OnActiveRoomChanged;
 }

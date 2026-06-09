@@ -63,7 +63,8 @@
             <!-- Focus session: start when idle, countdown + End when active -->
             <Button Content="Start focus session…" Background="#374151" HorizontalAlignment="Left"
                     Visibility="{Binding FocusBar.IsInactive, Converter={StaticResource BoolToVis}}"
-                    Command="{Binding StartFocusCommand}" />
+                    Command="{Binding StartFocusCommand}"
+                    CommandParameter="{Binding ElementName=RoomList, Path=SelectedItem}" />
             <DockPanel Visibility="{Binding FocusBar.IsActive, Converter={StaticResource BoolToVis}}">
                 <Button DockPanel.Dock="Right" Content="End session" Background="#7F1D1D"
                         Command="{Binding FocusBar.GiveUpCommand}" />

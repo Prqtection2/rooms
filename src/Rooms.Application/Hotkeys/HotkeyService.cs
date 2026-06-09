@@ -13,6 +13,7 @@ public sealed class HotkeyService : IHotkeyService, IDisposable
     private readonly IRoomManager _rooms;
     private readonly ISwitchOrchestrator _orchestrator;
     private readonly IAppSettingsStore _settingsStore;
+    private readonly INotificationService _notifications;
     private readonly ILogger<HotkeyService> _logger;
 
     private readonly Dictionary<int, HotkeyBinding> _bindings = new();
@@ -22,12 +23,14 @@ public sealed class HotkeyService : IHotkeyService, IDisposable
         IRoomManager rooms,
         ISwitchOrchestrator orchestrator,
         IAppSettingsStore settingsStore,
+        INotificationService notifications,
         ILogger<HotkeyService> logger)
     {
         _registrar = registrar;
         _rooms = rooms;
         _orchestrator = orchestrator;
         _settingsStore = settingsStore;
+        _notifications = notifications;
         _logger = logger;
 
         _registrar.HotkeyPressed += OnHotkeyPressed;
@@ -99,13 +102,25 @@ public sealed class HotkeyService : IHotkeyService, IDisposable
     {
         try
         {
-            await _orchestrator.SwitchToAsync(roomId).ConfigureAwait(false);
+            var result = await _orchestrator.SwitchToAsync(roomId).ConfigureAwait(false);
+
+            // A locked focus session refuses hotkey switches silently otherwise - tell the user why.
+            if (result.BlockedByFocus)
+            {
+                var remaining = result.FocusRemaining is { } r ? $" ({Describe(r)} left)" : string.Empty;
+                _notifications.ShowToast(
+                    "Focus locked",
+                    $"You're locked into a focus session{remaining}. Open the switcher (Ctrl+Alt+R) to give up early.");
+            }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Hotkey switch to room {RoomId} failed.", roomId);
         }
     }
+
+    private static string Describe(TimeSpan t) =>
+        t.TotalHours >= 1 ? t.ToString(@"h\:mm\:ss") : t.ToString(@"m\:ss");
 
     public void Suspend() => UnregisterAll();
 

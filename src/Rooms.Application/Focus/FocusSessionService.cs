@@ -27,6 +27,8 @@ public sealed class FocusSessionService : IFocusSessionService, IDisposable
 
     public event EventHandler<FocusSession>? SessionEnded;
 
+    public event EventHandler<FocusSession>? SessionCompleted;
+
     public event EventHandler<TimeSpan>? Tick;
 
     public void Start(Guid roomId, TimeSpan duration, bool allowEarlyExit = true)
@@ -83,7 +85,8 @@ public sealed class FocusSessionService : IFocusSessionService, IDisposable
         if (remaining <= TimeSpan.Zero)
         {
             Tick?.Invoke(this, TimeSpan.Zero);
-            Stop();
+            Stop();                                  // unlocks + raises SessionEnded
+            SessionCompleted?.Invoke(this, session); // ...and signals a natural finish (for a "well done")
             // TODO (focus milestone): optionally auto-switch to a configured "break" room.
             return;
         }

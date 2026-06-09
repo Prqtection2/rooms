@@ -17,7 +17,8 @@ public partial class FocusSessionDialogViewModel : ObservableObject
     private readonly ISwitchOrchestrator _orchestrator;
     private readonly IRoomManager _roomManager;
 
-    public FocusSessionDialogViewModel(IFocusSessionService focus, ISwitchOrchestrator orchestrator, IRoomManager roomManager)
+    public FocusSessionDialogViewModel(
+        IFocusSessionService focus, ISwitchOrchestrator orchestrator, IRoomManager roomManager, Guid? preselectRoomId = null)
     {
         _focus = focus;
         _orchestrator = orchestrator;
@@ -26,7 +27,10 @@ public partial class FocusSessionDialogViewModel : ObservableObject
         foreach (var room in _roomManager.Rooms.OrderBy(r => r.OrderIndex))
             Rooms.Add(new RoomChoice(room.Id, room.Name));
 
-        SelectedRoom = Rooms.FirstOrDefault(c => c.Id == _roomManager.ActiveRoom?.Id) ?? Rooms.FirstOrDefault();
+        // Default to the room the user is acting on (e.g. the one highlighted in the switcher),
+        // falling back to the active room. This is what makes "focus on room 2" lock room 2.
+        var targetId = preselectRoomId ?? _roomManager.ActiveRoom?.Id;
+        SelectedRoom = Rooms.FirstOrDefault(c => c.Id == targetId) ?? Rooms.FirstOrDefault();
     }
 
     public ObservableCollection<RoomChoice> Rooms { get; } = new();

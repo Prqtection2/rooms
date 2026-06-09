@@ -18,6 +18,11 @@ public interface IFocusSessionService
 
     event EventHandler<FocusSession>? SessionEnded;
 
+    /// <summary>Raised when a timed session reaches its end on its own (the timer ran out), as
+    /// opposed to being stopped early. Use this to congratulate/notify; <see cref="SessionEnded"/>
+    /// still fires for both early-stop and natural completion.</summary>
+    event EventHandler<FocusSession>? SessionCompleted;
+
     /// <summary>Raised roughly every second while a timed session runs, with the time remaining.</summary>
     event EventHandler<TimeSpan>? Tick;
 
